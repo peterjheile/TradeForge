@@ -9,7 +9,6 @@ __pycache__/
 venv/
 ENV/
 
-
 # OS files
 .DS_Store
 Thumbs.db
@@ -18,3 +17,7 @@ Thumbs.db
 logs/
 *.log
 *.csv
+
+# Secrets
+.env
+*.key
