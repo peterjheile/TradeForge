@@ -19,7 +19,7 @@ class Broker(Protocol):
         pass
 
     #requesst curretn positions, return list of current positions
-    def get_position(self) -> list[dict[str, Any]]:
+    def get_positions(self) -> list[dict[str, Any]]:
         pass
 
     #request account information, return basic information about account (equity, cash, etc)

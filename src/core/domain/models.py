@@ -31,12 +31,21 @@ class TimeInForce(str, Enum):
     FOK = "fok"
 
 class OrderStatus(str, Enum):
+    PENDING_NEW = "pending_new"
     NEW = "new"
     ACCEPTED = "accepted"
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
+    DONE_FOR_DAY = "done_for_day"
     CANCELED = "canceled"
+    EXPIRED = "expired"
+    REPLACED = "replaced"
+    PENDING_CANCEL = "pending_cancel"
+    PENDING_REPLACE = "pending_replace"
+    STOPPED = "stopped"
     REJECTED = "rejected"
+    SUSPENDED = "suspended"
+    CALCULATED = "calculated"
 
 class Timeframe(str, Enum):
     ONE_MIN = "1Min"
