@@ -31,3 +31,27 @@ class AlpacaAccount:
             api_version="v2"
         )
 
+
+
+
+
+
+from datetime import , time
+symbol     = "QQQ"
+timeframe  = "1min"
+end        = datetime.now(timezone.utc)
+start      = end - timedelta(days=2)   # gives enough context
+limit      = 500                       # 500 minutes (~8.3 hours)
+feed       = "iex"                     # free, delayed ~15 min
+adjustment = "raw"                     # no corporate-action adjustment
+sort       = Sort.ASC 
+
+account = AlpacaAccount()
+print(account.api.get_bars("", "1Min", 20))
+
+
+
+
+
+#NOTE: I need to make an overarching interface that will allow for multiple Brokerage Platforms to be used.
+#For now I will use alpaca and Tradier as my test subjects and design around these.

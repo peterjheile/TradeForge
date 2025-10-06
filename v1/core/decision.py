@@ -1,12 +1,7 @@
 #conatins the signal class used to communicate buy/sell/hold signals and their assiciated data between the bots and the runner
 
-from enum import Enum
 from typing import Optional
-
-class Signal(Enum):
-    BUY = "buy"
-    SELL = "sell"
-    HOLD = "hold"
+from core.signal import Signal
 
 
 class Decision:
