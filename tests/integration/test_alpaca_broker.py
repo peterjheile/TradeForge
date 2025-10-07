@@ -1,7 +1,7 @@
 ###
-# Last edit: 10/6/2025
-#
+# EDITS:
 # Desc: Tests the alpaca broker
+# 10/7/2025: added testing for every single alpaca broker function
 ###
 
 import os, pytest

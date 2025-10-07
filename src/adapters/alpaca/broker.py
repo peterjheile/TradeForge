@@ -7,6 +7,7 @@
 from core.domain.models import Order, OrderRequest, OrderStatus, Side
 from core.ports.broker import Broker
 from adapters.alpaca.mappers import map_time_in_force
+from app.settings import AlpacaSettings
 
 
 #again lazy import so my library can install without alpaca-py isntalled
@@ -30,13 +31,13 @@ else:
 class AlpacaBroker(Broker):
 
     #link to alpaca trading client, raise error if alpaca-py now installed
-    def __init__(self, key: str, secret: str, paper: bool = True):
+    def __init__(self, APCASettings: AlpacaSettings):
         if _IMPORT_ERROR:
             raise RuntimeError(
                 "alpaca-py is required for AlpacaBroker. Install with: pip install alpaca-py"
             ) from _IMPORT_ERROR
         
-        self._client = TradingClient(key, secret, paper=paper)
+        self._client = TradingClient(APCASettings.key, APCASettings.secret, paper=APCASettings.paper)
 
 
     #place an order, return the custom order object describing that order

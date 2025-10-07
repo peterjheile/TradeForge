@@ -41,3 +41,9 @@ class GenericAccount:
 
     def account(self) -> dict:
         return self._broker.get_account()
+    
+    def cancel(self, order_id: str) -> None:
+        self._broker.cancel_order(order_id)
+
+    def status(self, order_id: str) -> Order:
+        return self._broker.get_order(order_id)

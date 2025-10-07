@@ -9,8 +9,8 @@ class _AlpacaProvider:
     def build(self, settings):
         a = settings.alpaca
         return (
-            AlpacaBroker(a.key, a.secret, paper=a.paper),
-            AlpacaMarketData(a.key, a.secret),
+            AlpacaBroker(a),
+            AlpacaMarketData(a),
         )
     
 register(_AlpacaProvider())

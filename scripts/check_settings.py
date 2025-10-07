@@ -5,8 +5,16 @@
 ###
 
 from app.settings import get_settings
+
+def test_settings(s):
+
+    print("################################################################################")
+    print(f"Configured Providers: {s.configured_providers()}")
+    print(s)
+
+
+
+
+
 s = get_settings()
-print("provider:", s.provider)
-print("alpaca.key present?:", bool(s.alpaca.key))
-print("allow_trades:", s.allow_real_trades)
-print("alpaca.paper:", s.alpaca.paper)
+test_settings(s)

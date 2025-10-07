@@ -1,7 +1,7 @@
 ###
 # Last edit: 10/5/25
 #
-# Desc: Maps broker specific values/strings to uniform values/strings
+# Desc: Maps uniform/domain names and objects to BROKER specific names/requirements
 ###
 
 from core.domain.models import Timeframe as DomainTimeFrame

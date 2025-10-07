@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from core.domain.models import Bar, Timeframe
 from core.ports.market_data import MarketData
 from .mappers import map_timeframe
+from app.settings import AlpacaSettings
 
 #lazy import so that my project will still install even if alpaca-py is not present
 try:
@@ -30,15 +31,15 @@ else:
 #alpaca implementation of marketdata port, historical bars only for now
 class AlpacaMarketData(MarketData):
 
-    def __init__(self, key: str, secret: str):
+    def __init__(self, APCASettings: AlpacaSettings):
         if _IMPORT_ERROR:
             raise RuntimeError(
                 "alpaca-py is required for AlpakaMarketData. "
                 "Instqall with: pip install alpaca-py"
             ) from _IMPORT_ERROR
         
-        self._stock = StockHistoricalDataClient(key, secret)
-        self._crypto = CryptoHistoricalDataClient(key, secret)
+        self._stock = StockHistoricalDataClient(APCASettings.key, APCASettings.secret)
+        self._crypto = CryptoHistoricalDataClient(APCASettings.key, APCASettings.secret)
 
 
     #quick heuristic to see if the symbol is a cryptocurrent
