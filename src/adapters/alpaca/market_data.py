@@ -48,7 +48,7 @@ class AlpacaMarketData(MarketData):
 
 
     def get_bars(self, symbol: str, timeframe: Timeframe, limit: int=100) -> List[Bar]:
-        tf_obj = map_timeframe(timeframe)
+        alpaca_tf = map_timeframe(timeframe)
 
         end = datetime.now(timezone.utc)
         start = end - timedelta(days=7)
@@ -56,18 +56,18 @@ class AlpacaMarketData(MarketData):
         if self._is_crypto(symbol):
             req = CryptoBarsRequest(
                 symbol_or_symbols=symbol,
-                timeframe = tf_obj,
+                timeframe = alpaca_tf,
                 start = start,
                 end = end,
                 limit = limit,
                 feed = "iex"
             )
-            resp = self._crypto.get_stock_bars(req)
+            resp = self._crypto.get_crypto_bars(req)
             bars = resp.data.get(symbol, [])
         else:
             req = StockBarsRequest(
                 symbol_or_symbols=symbol,
-                timeframe = tf_obj,
+                timeframe = alpaca_tf,
                 start = start,
                 end = end,
                 limit = limit,

@@ -4,15 +4,34 @@
 # Desc: Maps broker specific values/strings to uniform values/strings
 ###
 
-from core.domain.models import Timeframe
-from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from core.domain.models import Timeframe as DomainTimeFrame
+from core.domain.models import TimeInForce as DomainTIF
+from alpaca.data.timeframe import TimeFrameUnit
+from alpaca.data.timeframe import TimeFrame as AlpacaTimeFrame
+from alpaca.trading.enums import TimeInForce as AlpacaTIF
 
 
-#map my domain timeframe to an alpaca timeframe
-def map_timeframe(tf: Timeframe) -> str:
-    if tf == "1Min": return TimeFrame(1, TimeFrameUnit.Minute)
-    if tf == "5Min": return TimeFrame(5, TimeFrameUnit.Minute)
-    if tf == "15Min":return TimeFrame(15, TimeFrameUnit.Minute)
-    if tf == "1H": return TimeFrame(1, TimeFrameUnit.Hour)
-    if tf == "1D":return TimeFrame(1, TimeFrameUnit.Day)
-    raise ValueError(f"Unsupported timeframe: {tf}")
+
+def map_timeframe(tf: DomainTimeFrame) -> AlpacaTimeFrame:
+    mapping = {
+        DomainTimeFrame.ONE_MIN:  AlpacaTimeFrame(1,  TimeFrameUnit.Minute),
+        DomainTimeFrame.FIVE_MIN: AlpacaTimeFrame(5,  TimeFrameUnit.Minute),
+        DomainTimeFrame.FIFTEEN_MIN: AlpacaTimeFrame(15, TimeFrameUnit.Minute),
+        DomainTimeFrame.ONE_HOUR: AlpacaTimeFrame(1,  TimeFrameUnit.Hour),
+        DomainTimeFrame.ONE_DAY:  AlpacaTimeFrame(1,  TimeFrameUnit.Day),
+    }
+    try:
+        return mapping[tf]
+    except KeyError:
+        raise ValueError(f"Unsupported timeframe: {tf}")
+
+
+#map domain time in force to alpaca time in force34. Luckily its nearly 1 to 1
+def map_time_in_force(tif: DomainTIF) -> AlpacaTIF:
+    table = {
+        DomainTIF.DAY: AlpacaTIF.DAY,
+        DomainTIF.GTC: AlpacaTIF.GTC,
+        DomainTIF.IOC: AlpacaTIF.IOC,
+        DomainTIF.FOK: AlpacaTIF.FOK,
+    }
+    return table[tif]

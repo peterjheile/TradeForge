@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import List
 from core.ports.broker import Broker
 from core.ports.market_data import MarketData
-from core.domain.models import OrderRequest, Order, Side, OrderType, Timeframe, Bar
+from core.domain.models import OrderRequest, Order, Side, OrderType, Timeframe, Bar, TimeInForce
 
 
 class GenericAccount:
@@ -19,13 +19,13 @@ class GenericAccount:
 
 
     #orders
-    def buy_market(self, symbol: str, qty: float) -> Order:
-        req = OrderRequest(symbol = symbol, qty = qty, side = Side.BUY, type = OrderType.MARKET)
+    def buy_market(self, symbol: str, qty: float,  tif: TimeInForce = TimeInForce.DAY) -> Order:
+        req = OrderRequest(symbol = symbol, qty = qty,  time_in_force=tif, side = Side.BUY, type = OrderType.MARKET)
         return self._broker.place_order(req)
     
 
-    def sell_market(self, symbol: str, qty: float) -> Order:
-        req = OrderRequest(symbol = symbol, qty = qty, side= Side.SELL, type=OrderType.MARKET)
+    def sell_market(self, symbol: str, qty: float, tif: TimeInForce = TimeInForce.DAY) -> Order:
+        req = OrderRequest(symbol = symbol, qty = qty,  time_in_force=tif, side= Side.SELL, type=OrderType.MARKET)
         return self._broker.place_order(req)
     
 

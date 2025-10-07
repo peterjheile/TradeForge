@@ -6,6 +6,7 @@
 
 from core.domain.models import Order, OrderRequest, OrderStatus, Side
 from core.ports.broker import Broker
+from adapters.alpaca.mappers import map_time_in_force
 
 
 #again lazy import so my library can install without alpaca-py isntalled
@@ -41,19 +42,21 @@ class AlpacaBroker(Broker):
     #place an order, return the custom order object describing that order
     def place_order(self, req: OrderRequest) -> Order:
 
+        tif = map_time_in_force(req.time_in_force)
+
         if req.type.value == "market":
             order_req = MarketOrderRequest(
                 symbol = req.symbol,
                 qty = req.qty,
                 side = OrderSide.BUY if req.side.value == "buy" else OrderSide.SELL,
-                time_in_force = TimeInForce.DAY
+                time_in_force = tif
             )
         else:
             order_req = LimitOrderRequest(
                 symbol = req.symbol,
                 qty = req.qty,
                 side = OrderSide.BUY if req.side.value == "buy" else OrderSide.SELL,
-                time_in_force = TimeInForce.Day,
+                time_in_force = tif,
                 limit_price = req.limit_price
             )
 
