@@ -18,19 +18,20 @@ from alpaca.trading.requests import (
     TrailingStopOrderRequest,
 )
 
-from alpaca.trading.enums import OrderType as AlpacaOrderType
+from alpaca.trading.enums import OrderType as AlpacaOT
 
 
 from alpaca.common.exceptions import APIError
 from core.domain.models import Order, OrderRequest, OrderStatus, Side
-from adapters.alpaca.mappers import map_time_in_force, map_side, map_order_type
+from adapters.alpaca.mappers import *
 from core.ports.broker import Broker
 from app.settings import AlpacaSettings
 
 
 
 class BrokerOrderError(RuntimeError):
-     """User-facing broker error with a clean message."""
+     """User-facing broker (i.e alpaca) error with a clean message."""
+
 
 
 def _require(name: str, value: Optional[float | Decimal]) -> float | Decimal:
@@ -40,10 +41,11 @@ def _require(name: str, value: Optional[float | Decimal]) -> float | Decimal:
 
 
 
+
 class AlpacaBroker(Broker):
 
-    def __init__(self, APCASettings: AlpacaSettings):
-        self._client = TradingClient(APCASettings.key, APCASettings.secret, paper=APCASettings.paper)
+    def __init__(self, alpaca: AlpacaSettings):
+        self._client = TradingClient(alpaca.key, alpaca.secret, paper=alpaca.paper)
 
 
     def place_order(self, req: OrderRequest) -> Order:
@@ -54,14 +56,14 @@ class AlpacaBroker(Broker):
         ot = map_order_type(req.type)
         try:
             match ot:
-                case AlpacaOrderType.MARKET:
+                case AlpacaOT.MARKET:
                     order_req = MarketOrderRequest(
                         symbol=req.symbol,
                         qty=req.qty,
                         side=side,
                         time_in_force=tif,
                     )
-                case AlpacaOrderType.LIMIT:
+                case AlpacaOT.LIMIT:
                     order_req = LimitOrderRequest(
                         symbol=req.symbol,
                         qty=req.qty,
@@ -69,7 +71,7 @@ class AlpacaBroker(Broker):
                         time_in_force=tif,
                         limit_price=_require("limit_price", req.limit_price),
                     )
-                case AlpacaOrderType.STOP:
+                case AlpacaOT.STOP:
                     order_req = StopOrderRequest(
                         symbol=req.symbol,
                         qty=req.qty,
@@ -77,7 +79,7 @@ class AlpacaBroker(Broker):
                         time_in_force=tif,
                         stop_price=_require("stop_price", req.stop_price),
                     )
-                case AlpacaOrderType.STOP_LIMIT:
+                case AlpacaOT.STOP_LIMIT:
                     order_req = StopLimitOrderRequest(
                         symbol=req.symbol,
                         qty=req.qty,
@@ -86,7 +88,7 @@ class AlpacaBroker(Broker):
                         stop_price= _require("stop_price", req.stop_price),
                         limit_price= _require("limit_price", req.limit_price),
                     )
-                case AlpacaOrderType.TRAILING_STOP:
+                case AlpacaOT.TRAILING_STOP:
                     has_tp = req.trail_price is not None
                     has_pct = req.trail_percent is not None
                     if has_tp == has_pct:
@@ -135,7 +137,7 @@ class AlpacaBroker(Broker):
             status = OrderStatus(alpaca_order.status),
             filled_qty=filled_f
         )
-    #NOTE: THERE ARE SOME ORDER VALUES THAT I HAVE ADDED
+    #NOTE: THERE ARE SOME ORDER VALUES THAT I HAVE NOT ADDED
 
 
 
