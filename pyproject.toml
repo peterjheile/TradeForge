@@ -28,6 +28,9 @@ tradeforge = "app.cli:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.package-data]
 # optional — include config or templates
 "app" = ["*.env", "*.ini"]

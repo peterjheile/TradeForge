@@ -1,75 +1,144 @@
 ###
-# Last edit: 10/6/2025
-#
+# EDITS:
 # Desc: 
+# 10/6/2025: created file and made super basic place_order, cancel_order, get_positions, and get_account
+# 10/8/2025: Createed advanced place_order function to allow for all alpaca api orders to be utilized
 ###
 
+from __future__ import annotations
+from typing import Optional
+from decimal import Decimal
+
+from alpaca.trading.client import TradingClient
+from alpaca.trading.requests import (
+    MarketOrderRequest,
+    LimitOrderRequest,
+    StopOrderRequest,
+    StopLimitOrderRequest,
+    TrailingStopOrderRequest,
+)
+
+from alpaca.trading.enums import OrderType as AlpacaOrderType
+
+
+from alpaca.common.exceptions import APIError
 from core.domain.models import Order, OrderRequest, OrderStatus, Side
+from adapters.alpaca.mappers import map_time_in_force, map_side, map_order_type
 from core.ports.broker import Broker
-from adapters.alpaca.mappers import map_time_in_force
 from app.settings import AlpacaSettings
 
 
-#again lazy import so my library can install without alpaca-py isntalled
-try:
-    from alpaca.trading.client import TradingClient
-    from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
-    from alpaca.trading.enums import OrderSide, TimeInForce
-except Exception as e:  # pragma: no cover
-    TradingClient = None
-    MarketOrderRequest = None
-    LimitOrderRequest = None
-    OrderSide = None
-    TimeInForce = None
-    _IMPORT_ERROR = e
-else:
-    _IMPORT_ERROR = None
+
+class BrokerOrderError(RuntimeError):
+     """User-facing broker error with a clean message."""
+
+
+def _require(name: str, value: Optional[float | Decimal]) -> float | Decimal:
+    if value is None:
+        raise BrokerOrderError(f"Missing required parameter '{name}' for this order type.")
+    return value
 
 
 
-#alpaca implementation of the broker port
 class AlpacaBroker(Broker):
 
-    #link to alpaca trading client, raise error if alpaca-py now installed
     def __init__(self, APCASettings: AlpacaSettings):
-        if _IMPORT_ERROR:
-            raise RuntimeError(
-                "alpaca-py is required for AlpacaBroker. Install with: pip install alpaca-py"
-            ) from _IMPORT_ERROR
-        
         self._client = TradingClient(APCASettings.key, APCASettings.secret, paper=APCASettings.paper)
 
 
-    #place an order, return the custom order object describing that order
     def place_order(self, req: OrderRequest) -> Order:
-
         tif = map_time_in_force(req.time_in_force)
+        side = map_side(req.side)
 
-        if req.type.value == "market":
-            order_req = MarketOrderRequest(
-                symbol = req.symbol,
-                qty = req.qty,
-                side = OrderSide.BUY if req.side.value == "buy" else OrderSide.SELL,
-                time_in_force = tif
-            )
-        else:
-            order_req = LimitOrderRequest(
-                symbol = req.symbol,
-                qty = req.qty,
-                side = OrderSide.BUY if req.side.value == "buy" else OrderSide.SELL,
-                time_in_force = tif,
-                limit_price = req.limit_price
-            )
 
-        alpaca_order = self._client.submit_order(order_req)
+        ot = map_order_type(req.type)
+        try:
+            match ot:
+                case AlpacaOrderType.MARKET:
+                    order_req = MarketOrderRequest(
+                        symbol=req.symbol,
+                        qty=req.qty,
+                        side=side,
+                        time_in_force=tif,
+                    )
+                case AlpacaOrderType.LIMIT:
+                    order_req = LimitOrderRequest(
+                        symbol=req.symbol,
+                        qty=req.qty,
+                        side=side,
+                        time_in_force=tif,
+                        limit_price=_require("limit_price", req.limit_price),
+                    )
+                case AlpacaOrderType.STOP:
+                    order_req = StopOrderRequest(
+                        symbol=req.symbol,
+                        qty=req.qty,
+                        side=side,
+                        time_in_force=tif,
+                        stop_price=_require("stop_price", req.stop_price),
+                    )
+                case AlpacaOrderType.STOP_LIMIT:
+                    order_req = StopLimitOrderRequest(
+                        symbol=req.symbol,
+                        qty=req.qty,
+                        side=side,
+                        time_in_force=tif,
+                        stop_price= _require("stop_price", req.stop_price),
+                        limit_price= _require("limit_price", req.limit_price),
+                    )
+                case AlpacaOrderType.TRAILING_STOP:
+                    has_tp = req.trail_price is not None
+                    has_pct = req.trail_percent is not None
+                    if has_tp == has_pct:
+                        raise BrokerOrderError(
+                            "Trailing stop requires exactly one of 'trail_price' or 'trail_percent'."
+                        )
+                    order_req = TrailingStopOrderRequest(
+                        symbol=req.symbol,
+                        qty=req.qty,
+                        side=side,
+                        time_in_force=tif,
+                        trail_price=req.trail_price,
+                        trail_percent=req.trail_percent,
+                    )
+                case _:
+                    #raise an error
+                    raise BrokerOrderError(f"Unsupported order type: {ot}")
+        
+        except BrokerOrderError:
+            # raise own Broker Error Defined
+            raise
+        except Exception as e:
+            #raise any unewxpected clinet side error
+            raise BrokerOrderError(f"Failed to build order request: {e}") from e
+
+
+
+        #submit order to alpca
+        try: 
+            alpaca_order = self._client.submit_order(order_req)
+        except APIError as e:
+            raise BrokerOrderError(f"Alpaca rejected the order: {e}") from e
+
+
+
+        filled = alpaca_order.filled_qty
+        try:
+            filled_f = float(filled or 0.0)
+        except Exception:
+            filled_f = 0.0
+
+
         return Order(
             id = alpaca_order.id,
             symbol = alpaca_order.symbol,
             status = OrderStatus(alpaca_order.status),
-            filled_qty = float(alpaca_order.filled_qty or 0.0)
+            filled_qty=filled_f
         )
-    
-    
+    #NOTE: THERE ARE SOME ORDER VALUES THAT I HAVE ADDED
+
+
+
     #cancel and order by a given id
     def cancel_order(self, order_id: str) -> None:
         self._client.cancel_order_by_id(order_id)
@@ -83,4 +152,8 @@ class AlpacaBroker(Broker):
     #get the account, just returns a dict describing the account
     def get_account(self) -> dict:
         return self._client.get_account().__dict__
-    
+
+
+
+
+

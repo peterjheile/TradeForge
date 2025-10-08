@@ -23,12 +23,17 @@ class Side(str, Enum):
 class OrderType(str, Enum):
     MARKET = "market"
     LIMIT = "limit"
+    STOP = "stop"
+    STOP_LIMIT = "stop_limit"
+    TRAILING_STOP = "trailing_stop"
 
 class TimeInForce(str, Enum):
     DAY = "day"
     GTC = "gtc"
     IOC = "ioc"
     FOK = "fok"
+    OPG = "opg"
+    CLS = "atc"
 
 class OrderStatus(str, Enum):
     PENDING_NEW = "pending_new"
@@ -65,7 +70,12 @@ class OrderRequest:
     side: Side
     type: OrderType
     time_in_force: TimeInForce = TimeInForce.DAY
-    limit_price: Optional[float] = None   #this is used when the type == LIMIT
+    limit_price: Optional[float] = None   #this is used when the type == LIMIT STOP_LIMIT
+    stop_price: Optional[float] = None #this is used when the type == STOP or STOP_LIMIT
+    trail_price: Optional[float] = None #used when type == TRAILING_STOP
+    trail_percent: Optional[float] = None #used when type == TRAILING_STOP
+
+
 
 @dataclass(frozen=True)
 class Order:
