@@ -23,7 +23,9 @@ from alpaca.trading.enums import OrderType as AlpacaOT
 
 from alpaca.common.exceptions import APIError
 from core.domain.models import Order, OrderRequest, OrderStatus, Side
-from adapters.alpaca.mappers import *
+from adapters.alpaca.mappers import (
+    map_time_in_force, map_side, map_order_type,
+)
 from core.ports.broker import Broker
 from app.settings import AlpacaSettings
 
@@ -49,12 +51,13 @@ class AlpacaBroker(Broker):
 
 
     def place_order(self, req: OrderRequest) -> Order:
-        tif = map_time_in_force(req.time_in_force)
-        side = map_side(req.side)
 
-
-        ot = map_order_type(req.type)
         try:
+            tif = map_time_in_force(req.time_in_force)
+            side = map_side(req.side)
+            ot = map_order_type(req.type)
+
+            
             match ot:
                 case AlpacaOT.MARKET:
                     order_req = MarketOrderRequest(
