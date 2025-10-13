@@ -12,6 +12,7 @@ types, and a generic `get_bars` for historical data.
 # EDITS:
 # 10/6/2025 generic account irrespecitve of provider over top of the Broker and MarketData
 # 10/13/2025: further reduced function to even more generic forms now that high capability has been added to adapters.
+# 10/13/2025: Added a service to manage the market data object. Replaces the base marketdata with that service manager _mds
 ###
 
 
@@ -30,6 +31,7 @@ from core.domain.policies import (
 )
 from core.ports.broker import Broker
 from core.ports.market_data import MarketData
+from core.services.market_data import MarketDataService
 
 
 
@@ -37,9 +39,9 @@ from core.ports.market_data import MarketData
 class GenericAccount:
     """Broker-agnostic account facade backed by the Broker and MarketData ports."""
 
-    def __init__(self, broker: Broker, data: MarketData):
+    def __init__(self, broker: Broker, data_service: MarketDataService):
         self._broker = broker
-        self._data = data
+        self._mds = data_service
 
 
     # --------------------
@@ -93,7 +95,7 @@ class GenericAccount:
     # --------------------
     def get_bars(self, symbol: str, timeframe: Timeframe, limit: int = 100) -> list[Bar]:
         """Fetch the most recent bars (oldest → newest)."""
-        return self._data.get_bars(symbol, timeframe, limit)
+        return self._mds.get_bars(symbol, timeframe, limit)
 
 
 
