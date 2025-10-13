@@ -1,13 +1,3 @@
-
-###
-# EDITS:
-# 10/xx/2025: A lot of edits and editions I did not document
-# 10/13/2025: changes price values to decimal instead of float, datatime object for filled dates
-# 10/13/2025: added docstring, added universal data validation
-# 10/13/2025: added a generic position and account to the domain
-###
-
-
 """
 core.domain.models
 ------------------
@@ -19,6 +9,16 @@ order statuses. They form the foundation of the domain layer and ensure that
 data passed between adapters, policies, and use cases remains consistent,
 validated, and independent of any specific broker SDK.
 """
+
+
+###
+# EDITS:
+# 10/xx/2025: A lot of edits and editions I did not document
+# 10/13/2025: changes price values to decimal instead of float, datatime object for filled dates
+# 10/13/2025: added docstring, added universal data validation
+# 10/13/2025: added a generic position and account to the domain
+###
+
 
 
 

@@ -1,10 +1,3 @@
-###
-# EDITS:
-# 10/13/2025: added normalization to an Order Request and error handling for when normalization cannot be applied correcly
-# 10/13/2025: added normalization to a domain position and domain account 
-###
-
-
 """
 Domain-level policies: normalization that is broker-agnostic.
 
@@ -12,6 +5,12 @@ Domain-level policies: normalization that is broker-agnostic.
 - No broker/venue constraints here (those live in broker policies).
 """
 
+
+###
+# EDITS:
+# 10/13/2025: added normalization to an Order Request and error handling for when normalization cannot be applied correcly
+# 10/13/2025: added normalization to a domain position and domain account 
+###
 
 
 from __future__ import annotations
