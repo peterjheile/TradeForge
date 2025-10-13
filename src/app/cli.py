@@ -83,6 +83,12 @@ def buy(
     tif: TimeInForce = typer.Option(TimeInForce.DAY, "--tif", help="Time in force"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation"),
 ):
+    
+    # opts = typer.get_current_context().obj or {}
+    # if opts.get("dry_run"):
+    #     typer.echo(f"[DRY-RUN] Would place: {req}")
+    #     return
+
     """Place a market BUY."""
     _confirm_or_exit(f"About to BUY {qty} {symbol} @ market.", yes)
     acct = make_account()
@@ -103,6 +109,19 @@ def sell(
     typer.echo(f"Order {order.id} {order.status} for {order.symbol} (filled {order.filled_qty})")
 
 
+
+
+
+@app.callback()
+def main(
+    yes: bool = typer.Option(False, "--yes", help="Skip confirmations"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Build orders but do not submit"),
+):
+    ctx = typer.get_current_context()
+    ctx.obj = {"yes": yes, "dry_run": dry_run}
+    from app.settings import get_settings
+    s = get_settings()
+    typer.echo(f"provider={s.provider} | alpaca(paper={s.alpaca.paper}) | tradier(paper={s.tradier.paper})")
 
 
 

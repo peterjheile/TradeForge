@@ -3,6 +3,7 @@
 # Desc: 
 # 10/6/2025: created file and made super basic place_order, cancel_order, get_positions, and get_account
 # 10/8/2025: Createed advanced place_order function to allow for all alpaca api orders to be utilized
+# 10/13/2025: Added simple preflight check for alpacabroker
 ###
 
 from __future__ import annotations
@@ -28,11 +29,28 @@ from adapters.alpaca.mappers import (
 )
 from core.ports.broker import Broker
 from app.settings import AlpacaSettings
-
+from functools import lru_cache
 
 
 class BrokerOrderError(RuntimeError):
      """User-facing broker (i.e alpaca) error with a clean message."""
+
+
+#return the string message to be added for a given api error
+def _APIError_addentum(e: APIError) -> str:
+    msg = str(e)
+    lower = msg.lower()
+    if "wash trade" in lower:
+        msg += "  Hint: wait for previous order to fill or cancel opposite open orders."
+    elif "insufficient balance" in lower or "buying power" in lower:
+        msg += "  Hint: lower the order size or check available buying power."
+    elif "unauthorized" in lower:
+        msg += ("  Hint: verify your API key/secret, paper/live flag, and IP allowlist "
+                "in the Alpaca dashboard.")
+    elif "forbidden" in lower or "403" in lower:
+        msg += "  Hint: ensure the account is approved for this instrument type."
+
+    return msg
 
 
 
@@ -50,7 +68,27 @@ class AlpacaBroker(Broker):
         self._client = TradingClient(alpaca.key, alpaca.secret, paper=alpaca.paper)
 
 
+
+    @lru_cache(maxsize=1)
+    def _preflight(self):
+        acct = self._client.get_account()
+
+        if not self._client.paper and getattr(acct, "status", "").upper() != "ACTIVE":
+            raise BrokerOrderError(f"Account not ACTIVE (status={acct.status}).")
+        if getattr(acct, "trading_blocked", False):
+            raise BrokerOrderError("Trading is blocked on this account.")
+        
+        #pk/ak sanity checks
+        key = getattr(self._client, "_key_id", "")
+        if self._client.paper and not str(key).startswith("PK"):
+            raise BrokerOrderError("Paper trading enabled but key doesn’t look like a paper key (PK...).")
+        if not self._client.paper and not str(key).startswith("AK"):
+            raise BrokerOrderError("Live trading enabled but key doesn’t look like a live key (AK...).")
+
+
     def place_order(self, req: OrderRequest) -> Order:
+        self._preflight()
+
 
         try:
             tif = map_time_in_force(req.time_in_force)
@@ -123,7 +161,8 @@ class AlpacaBroker(Broker):
         try: 
             alpaca_order = self._client.submit_order(order_req)
         except APIError as e:
-            raise BrokerOrderError(f"Alpaca rejected the order: {e}") from e
+            msg = _APIError_addentum(e)
+            raise BrokerOrderError(f"Alpaca rejected the order: {msg}") from e
 
 
 
