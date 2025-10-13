@@ -4,6 +4,7 @@
 # 10/xx/2025: A lot of edits and editions I did not document
 # 10/13/2025: changes price values to decimal instead of float, datatime object for filled dates
 # 10/13/2025: added docstring, added universal data validation
+# 10/13/2025: added a generic position and account to the domain
 ###
 
 
@@ -250,3 +251,63 @@ class Bar:
     l: Decimal #low
     c: Decimal #close
     v: int  #volume
+
+
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# ACCOUNT AND POSITION MODELS
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class Position:
+    """Represents a normalized open position held in a trading account.
+
+    All brokers map their raw position payloads to this shape to ensure
+    consistency across adapters. Decimal fields maintain precision for
+    financial calculations.
+
+    Attributes:
+        symbol: The trading symbol (e.g., 'AAPL', 'BTC/USD').
+        asset_class: Asset class ('equity', 'crypto', 'option', etc.).
+        qty: Net position size (positive = long, negative = short).
+        avg_price: Average fill price of the current position.
+        market_value: Current market value of the position.
+        unrealized_pl: Unrealized profit or loss (positive or negative).
+        updated_at: UTC timestamp of the last known update.
+    """
+    symbol: str
+    asset_class: AssetClass
+    qty: Decimal
+    avg_price: Decimal
+    market_value: Optional[Decimal] = None
+    unrealized_pl: Optional[Decimal] = None
+    updated_at: Optional[datetime] = None
+
+
+
+@dataclass(frozen=True)
+class Account:
+    """Represents a normalized brokerage account snapshot.
+
+    Provides minimal but essential financial metrics common across
+    brokers. Concrete adapters populate additional fields as needed.
+
+    Attributes:
+        account_id: Unique broker-assigned account identifier.
+        currency: Base currency of the account (e.g., 'USD').
+        cash: Current available cash balance.
+        equity: Total account equity (cash + positions).
+        buying_power: Usable buying power for new trades.
+        pattern_day_trader: Flag indicating PDT status (equities only).
+        updated_at: UTC timestamp of the last known update.
+    """
+    account_id: str
+    currency: str
+    cash: Decimal
+    equity: Decimal
+    buying_power: Decimal
+    pattern_day_trader: bool = False
+    updated_at: Optional[datetime] = None

@@ -4,26 +4,52 @@
 # Desc: Overarching Abstraction interface that all connected brokerage accounts link through.
 ###
 
+from __future__ import annotations
 
-from typing import Protocol, Any
+from typing import Protocol, runtime_checkable, TypedDict, Optional, List
 from core.domain.models import OrderRequest, Order
 
+
+
+
+class BrokerError(RuntimeError):
+    """Raised for broker/transport/auth failures or policy rejections surfaced by adapters."""
+
+
+
+
+
+@runtime_checkable
 class Broker(Protocol):
+    """Overarching abstraction all brokerage adapters must implement."""
 
-    #submit a new order, return order submitted
     def place_order(self, order_req: OrderRequest) -> Order:
-        pass
+        """Submit a new order and return the broker's current view of it.
+        May raise BrokerError.
+        """
+        ...
 
-    #cancel an order, return True/False if canceled successfully or not
     def cancel_order(self, order_id: str) -> bool:
-        pass
+        """Attempt to cancel an order. Returns True if canceled, False otherwise.
+        May raise BrokerError.
+        """
+        ...
 
-    #requesst curretn positions, return list of current positions
-    def get_positions(self) -> list[dict[str, Any]]:
-        pass
+    def get_order(self, order_id: str) -> Optional[Order]:
+        """Fetch a single order by ID (None if not found).
+        May raise BrokerError.
+        """
+        ...
 
-    #request account information, return basic information about account (equity, cash, etc)
-    def get_account(self) -> dict[str, Any]:
-        pass
+    def get_positions(self) -> List[Position]:
+        """Return current open positions in canonical shape.
+        May raise BrokerError.
+        """
+        ...
+
+    def get_account(self) -> Account:
+        """Return a minimal account snapshot in canonical shape.
+        May raise BrokerError.
+        """
 
     

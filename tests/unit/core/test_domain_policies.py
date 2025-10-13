@@ -1,6 +1,7 @@
 ###
 # EDITS:
 # 10/13/2025: Created Comprehensive test of Domain policies (i.e. the OrderRequest normalization)
+# 10/13/2025: Added testing for account and position mormalization/policy
 ###
 
 
@@ -9,8 +10,8 @@ import pytest
 from decimal import Decimal
 from dataclasses import FrozenInstanceError
 
-from core.domain.models import OrderRequest, Side, OrderType, TimeInForce, AssetClass
-from core.domain.policies import normalize_order_request, DomainPolicyError
+from core.domain.models import OrderRequest, Side, OrderType, TimeInForce, AssetClass, Position, Account
+from core.domain.policies import normalize_order_request, DomainPolicyError, normalize_position, normalize_account
 
 
 # ----------------------------
@@ -139,3 +140,95 @@ def test_returns_new_instance_and_stays_frozen():
     assert o is not n
     with pytest.raises(FrozenInstanceError):
         n.symbol = "MSFT"
+
+
+
+
+# -------------------------------------------------------------------
+# AssetClass enum normalization for Position
+# -------------------------------------------------------------------
+
+from core.domain.models import AssetClass, Position
+
+def _d(x):  # reuse helper if not in scope here
+    from decimal import Decimal
+    return Decimal(str(x))
+
+def test_position_asset_class_from_string_to_enum():
+    p = Position(symbol="btc/usd", qty=_d("0.1"), avg_price=_d("50000"), asset_class="crypto")
+    n = normalize_position(p)
+    assert n.asset_class is AssetClass.CRYPTO
+
+def test_position_asset_class_passthrough_enum():
+    p = Position(symbol="SPY", qty=_d("10"), avg_price=_d("500"), asset_class=AssetClass.OPTION)
+    n = normalize_position(p)
+    assert n.asset_class is AssetClass.OPTION
+
+def test_position_asset_class_unknown_falls_back_to_equity():
+    p = Position(symbol="ABC", qty=_d("1"), avg_price=_d("10"), asset_class="unknown")
+    n = normalize_position(p)
+    assert n.asset_class is AssetClass.EQUITY
+
+
+
+
+# -------------------------------------------------------------------
+# Account normalization
+# -------------------------------------------------------------------
+
+def test_normalize_account_basic():
+    a = Account(
+        account_id="  id-123  ",
+        currency=" usd ",
+        cash=_d("1000.1234567"),
+        equity=_d("2000.9876543"),
+        buying_power=_d("4000.0000004"),
+        pattern_day_trader=True,
+    )
+    n = normalize_account(a)
+    assert n.account_id == "id-123"
+    assert n.currency == "USD"
+    assert n.cash == _d("1000.123457")       # HALF_UP to 6 places (default)
+    assert n.equity == _d("2000.987654")
+    assert n.buying_power == _d("4000.000000")
+    assert n.pattern_day_trader is True      # unchanged
+
+
+def test_normalize_account_custom_precision():
+    a = Account(
+        account_id="abc",
+        currency="usd",
+        cash=_d("1000.125"),
+        equity=_d("2000.994"),
+        buying_power=_d("3000.005"),
+    )
+    n = normalize_account(a, money_places=2)
+    assert n.cash == _d("1000.13")           # HALF_UP to 2 places
+    assert n.equity == _d("2000.99")
+    assert n.buying_power == _d("3000.01")
+
+
+def test_normalize_account_rejects_empty_account_id_and_currency():
+    with pytest.raises(DomainPolicyError):
+        normalize_account(Account(
+            account_id="   ", currency="USD",
+            cash=_d("0"), equity=_d("0"), buying_power=_d("0")
+        ))
+    with pytest.raises(DomainPolicyError):
+        normalize_account(Account(
+            account_id="abc", currency="   ",
+            cash=_d("0"), equity=_d("0"), buying_power=_d("0")
+        ))
+
+
+def test_normalize_account_idempotent():
+    a = Account(
+        account_id="id-1",
+        currency="usd",
+        cash=_d("1.000000"),
+        equity=_d("1.000000"),
+        buying_power=_d("1.000000"),
+    )
+    n1 = normalize_account(a)
+    n2 = normalize_account(n1)
+    assert n1 == n2
