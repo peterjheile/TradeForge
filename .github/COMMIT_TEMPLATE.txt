@@ -1,21 +1,15 @@
 <type>(<scope>): <short summary>
 
-# Explain what and why of the change here (optional)
-# Use the imperative mood, e.g. "add", "fix", "update"
-# Keep the first line ≤ 72 characters
+# Explain the WHAT and the WHY (optional, wrap at ~72 cols)
+# Use imperative mood (add, fix, refactor...)
 #
 # Common types:
-#   feat     – new feature
-#   fix      – bug fix
-#   docs     – documentation changes
-#   style    – formatting / style-only changes
-#   refactor – code refactor (no behavior change)
-#   test     – adding or updating tests
-#   chore    – maintenance (deps, configs, CI, etc.)
+#   feat, fix, docs, style, refactor, test, chore, build, ci
 #
-# Example:
-#   feat(account): add function to calculate average order price
+# Examples:
+#   feat(account): add average price calculator
+#   fix(api): correct order parsing for fractional shares
 #
 # Footer (optional):
 #   Closes #123
-#   Related to #45
+#   Related to #456
