@@ -81,6 +81,11 @@ class Timeframe(str, Enum):
     ONE_HOUR = "1H"
     ONE_DAY = "1D"
 
+class Broker(str, Enum):
+    """Enumerates supported brokerage integrations."""
+    ALPACA = "alpaca"
+    TRADIER = "tradier"
+
 
 # ---------------------------------------------------------------------------
 # DATA MODELS
@@ -286,6 +291,7 @@ class Account:
         updated_at: UTC timestamp of the last known update.
     """
     account_id: str
+    broker: Broker
     currency: str
     cash: Decimal
     equity: Decimal
